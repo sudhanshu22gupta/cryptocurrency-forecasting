@@ -44,7 +44,7 @@ class FeatureTransformations:
 
     def daily_volatility(self):
 
-        return np.sqrt(np.var(self.ds_close))
+        return self.ds_close.expanding().std()
 
     def daily_log_returns(self):
 
@@ -75,11 +75,11 @@ class FeatureTransformations:
 
         typical_price = (self.ds_high + self.ds_low + self.ds_close) / 3
         money_flow = typical_price * self.ds_volume
-        money_flow_t_1 = money_flow.shift(periods=1)
-        sign_money_flow = money_flow - money_flow_t_1
+        typical_price_t_1 = typical_price.shift(periods=1)
+        sign_money_flow = typical_price - typical_price_t_1
 
-        sum_pos_money_flow = sum(money_flow.loc[sign_money_flow > 0])
-        sum_neg_money_flow = sum(money_flow.loc[sign_money_flow < 0])
+        sum_pos_money_flow = money_flow.loc[sign_money_flow > 0].expanding().apply(np.nansum)
+        sum_neg_money_flow = money_flow.loc[sign_money_flow < 0].expanding().apply(np.nansum)
         money_ratio = sum_pos_money_flow / sum_neg_money_flow
 
         return 100 - (100 / (1 + money_ratio))
