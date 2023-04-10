@@ -19,3 +19,6 @@ class CleanData:
             columns={col: col.strip() for col in self.df.columns}, 
             inplace=True,
             )
+
+    def ffill(self):
+        self.df.ffill()

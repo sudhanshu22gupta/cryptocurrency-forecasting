@@ -31,12 +31,19 @@ class FeatureTransformations:
         self.df_asset['money_flow_index'] = self.money_flow_index()
         self.df_asset['avg_directional_movement_index'] = self.avg_directional_movement_index()
         self.df_asset['williams_accumulation_distribution'] = self.williams_accumulation_distribution()
+        self.df_asset['on_balance_volume'] = self.on_balance_volume()
+        self.df_asset['pma_10'] = self.pma_10()
+        self.df_asset['pma_30'] = self.pma_30()
+        self.df_asset['pma_60'] = self.pma_60()
 
     def transform_snp500(self):
 
         self.df_asset['daily_returns'] = self.daily_returns()
         self.df_asset['daily_log_returns'] = self.daily_log_returns()
         self.df_asset['monthly_realized_volatility'] = self.monthly_realized_volatility()
+        self.df_asset['pma_10'] = self.pma_10()
+        self.df_asset['pma_30'] = self.pma_30()
+        self.df_asset['pma_60'] = self.pma_60()
 
     def daily_returns(self):
 
@@ -78,8 +85,14 @@ class FeatureTransformations:
         typical_price_t_1 = typical_price.shift(periods=1)
         sign_money_flow = typical_price - typical_price_t_1
 
-        sum_pos_money_flow = money_flow.loc[sign_money_flow > 0].expanding().apply(np.nansum)
-        sum_neg_money_flow = money_flow.loc[sign_money_flow < 0].expanding().apply(np.nansum)
+        pos_money_flow = money_flow.copy()
+        pos_money_flow.loc[sign_money_flow < 0] = 0
+        sum_pos_money_flow = pos_money_flow.expanding().sum()
+
+        neg_money_flow = money_flow.copy()
+        neg_money_flow.loc[sign_money_flow > 0] = 0
+        sum_neg_money_flow = neg_money_flow.expanding().sum()
+
         money_ratio = sum_pos_money_flow / sum_neg_money_flow
 
         return 100 - (100 / (1 + money_ratio))
@@ -127,19 +140,47 @@ class FeatureTransformations:
 
     def williams_accumulation_distribution(self):
 
-        ds_wad = pd.Series([np.nan]*len(self.ds_close),
-                           index=self.ds_close.index)
+        ds_wad = pd.Series(np.zeros(shape=self.ds_close.shape), index=self.ds_close.index)
         
-        for idx, close_n, close_n_1 in zip(self.ds_close.index, self.ds_close, self.ds_close_t_1):
-            try:
-                if close_n > close_n_1:
-                    ds_wad[idx] = ds_wad[idx-pd.Timedelta(days=1)] + (
-                        self.ds_close[idx] - min([self.ds_low[idx], close_n_1]))
-                elif close_n < close_n_1:
-                    ds_wad[idx] = ds_wad[idx-pd.Timedelta(days=1)] + (
-                        self.ds_close[idx] - max([self.ds_high[idx], close_n_1]))
-                else:
-                    ds_wad[idx] = ds_wad[idx-pd.Timedelta(days=1)]
-            except KeyError:
-                pass
+        for idx, close_n, close_n_1 in zip(self.ds_close.index[1:], self.ds_close[1:], self.ds_close_t_1[1:]):
+            if close_n > close_n_1:
+                ds_wad[idx] = ds_wad[idx-pd.Timedelta(days=1)] + (
+                    self.ds_close[idx] - min([self.ds_low[idx], close_n_1]))
+            elif close_n < close_n_1:
+                ds_wad[idx] = ds_wad[idx-pd.Timedelta(days=1)] + (
+                    self.ds_close[idx] - max([self.ds_high[idx], close_n_1]))
+            else:
+                ds_wad[idx] = ds_wad[idx-pd.Timedelta(days=1)]
+        # ds_wad.iloc[0] = np.nan
         return ds_wad
+
+    def price_to_moving_avg_ratio_i(self, window_size):
+
+        return self.ds_close / self.ds_close.rolling(window_size).mean()
+
+    def pma_10(self):
+
+        return self.price_to_moving_avg_ratio_i(window_size="10d")
+
+    def pma_30(self):
+
+        return self.price_to_moving_avg_ratio_i(window_size="30d")
+
+    def pma_60(self):
+
+        return self.price_to_moving_avg_ratio_i(window_size="60d")
+
+    def on_balance_volume(self):
+
+        ds_obv = pd.Series(np.zeros(shape=self.ds_close.shape), index=self.ds_close.index)
+
+        for idx, close_n, close_n_1, volume_n in zip(self.ds_close.index[1:], self.ds_close[1:], self.ds_close_t_1[1:], self.ds_volume[1:]):
+
+            if close_n > close_n_1:
+                ds_obv[idx] = ds_obv[idx-pd.Timedelta(days=1)] + volume_n
+            elif close_n < close_n_1:
+                ds_obv[idx] = ds_obv[idx-pd.Timedelta(days=1)] - volume_n
+            else:
+                ds_obv[idx] = ds_obv[idx-pd.Timedelta(days=1)]
+        
+        return ds_obv
