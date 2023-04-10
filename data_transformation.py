@@ -21,4 +21,4 @@ class CleanData:
             )
 
     def ffill(self):
-        self.df.ffill()
+        self.df = self.df.ffill()
