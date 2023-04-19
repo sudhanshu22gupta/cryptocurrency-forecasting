@@ -156,19 +156,19 @@ class FeatureTransformations:
 
     def price_to_moving_avg_ratio_i(self, window_size):
 
-        return self.ds_close / self.ds_close.rolling(window_size).mean()
+        return self.ds_close / self.ds_close.rolling(window_size, min_periods=window_size).mean()
 
     def pma_10(self):
 
-        return self.price_to_moving_avg_ratio_i(window_size="10d")
+        return self.price_to_moving_avg_ratio_i(window_size=10)
 
     def pma_30(self):
 
-        return self.price_to_moving_avg_ratio_i(window_size="30d")
+        return self.price_to_moving_avg_ratio_i(window_size=30)
 
     def pma_60(self):
 
-        return self.price_to_moving_avg_ratio_i(window_size="60d")
+        return self.price_to_moving_avg_ratio_i(window_size=60)
 
     def on_balance_volume(self):
 
