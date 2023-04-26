@@ -1,6 +1,7 @@
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.linear_model import ElasticNet, SGDRegressor, TheilSenRegressor, RANSACRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
 
@@ -43,16 +44,43 @@ class BaseReg:
             X_test = self.scaler.transform(X_test)
         self.score = self.regressor.score(X_test, Y_test)
 
+    def grid_search_CV(
+        self, 
+        X_train, 
+        Y_train, 
+        param_grid, 
+        cv, 
+        refit=True,
+        scoring='r2', 
+        n_jobs=-1, 
+        verbose=5
+    ):
+        if self.regressor == None:
+            self.create_regressor()
+
+        self.grid_searcher = GridSearchCV(
+            estimator=self.regressor, 
+            param_grid=param_grid, 
+            cv=cv, 
+            refit=refit,
+            scoring=scoring, 
+            n_jobs=n_jobs, 
+            verbose=verbose,
+            )
+        self.grid_searcher.fit(X_train, Y_train)
+        self.regressor = self.grid_searcher.best_estimator_
+
 
 class RandomForestReg(BaseReg):
 
     def __init__(self, scaler=None, **params):
         super().__init__(scaler=scaler)
-        self.n_estimators = params["n_estimators"]
-        self.criterion = params["criterion"]
-        self.max_depth = params["max_depth"]
-        self.max_features = params["max_features"]
-        # self.min_samples_leaf = params["min_samples_leaf"]
+        self.n_estimators = params.get("n_estimators", 100)
+        self.criterion = params.get("criterion", "squared_error")
+        self.max_depth = params.get("max_depth", None)
+        self.max_features = params.get("max_features", 1.0)
+        self.min_samples_leaf = params.get("min_samples_leaf", 1)
+        self.min_samples_split = params.get("min_samples_split", 2)
 
     def create_regressor(self):
         self.regressor = RandomForestRegressor(
@@ -60,7 +88,8 @@ class RandomForestReg(BaseReg):
             criterion=self.criterion,
             max_depth=self.max_depth,
             max_features=self.max_features,
-            # min_samples_leaf=self.min_samples_leaf,
+            min_samples_leaf=self.min_samples_leaf,
+            min_samples_split=self.min_samples_split,
         )
 
 
