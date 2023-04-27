@@ -22,6 +22,7 @@ class BaseReg:
         X_train = self.scaler.fit_transform(X_train)
 
     def fit_regressor(self, X_train, Y_train):
+        self.X_train = X_train
         if self.regressor == None:
             self.create_regressor()
         # try:
@@ -34,6 +35,7 @@ class BaseReg:
         self.regressor.fit(X_train, Y_train)
 
     def predict_regressor(self, X_test):
+        self.X_test = X_test
         if self.scaler:
             X_test[X_test.columns] = self.scaler.transform(X_test)
         Y_pred = self.regressor.predict(X_test)
@@ -43,6 +45,19 @@ class BaseReg:
         if self.scaler:
             X_test = self.scaler.transform(X_test)
         self.score = self.regressor.score(X_test, Y_test)
+
+    def calc_price_from_daily_log_returns(self, price_var='Close'):
+
+        assert price_var in self.X_train.columns
+
+        price_n_1 = self.X_train[price_var].iloc[-1]
+        arr_price = np.array([np.nan]*len(self.X_test))
+        for i in range(len(self.X_test)):
+            arr_price[i] = price_n_1 * np.exp(self.Y_pred.iloc[i])
+            price_n_1 = arr_price[i]
+
+        ds_price_pred = pd.Series(arr_price, index=self.Y_pred.index)
+        return ds_price_pred
 
     def grid_search_CV(
         self, 
