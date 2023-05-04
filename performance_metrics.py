@@ -65,7 +65,7 @@ class PerformanceMetrics:
 
     def annualized_sharpe_ratio(self):
 
-        return self.sharpe_ratio() * (365)**0.5
+        return self.sharpe_ratio() * (365 / len(self.ds_actual_return))**0.5
 
     def adjusted_sharpe_ratio(self):
 
