@@ -64,7 +64,7 @@ class FeatureTransformations:
     def realized_volatility(self, N):
 
         ds_daily_squared_returns = self.daily_squared_returns()
-        return ds_daily_squared_returns.rolling(N, min_periods=N).sum()
+        return np.sqrt(ds_daily_squared_returns.rolling(N, min_periods=N).sum())
 
     def monthly_realized_volatility(self):
 
