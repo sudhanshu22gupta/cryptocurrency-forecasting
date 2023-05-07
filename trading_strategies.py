@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class TradingStrategy:
 
@@ -24,6 +25,13 @@ class TradingStrategy:
             "RSI_7": self.strategy_relative_strength_index_N(7),
             "RSI_14": self.strategy_relative_strength_index_N(14),
             "RSI_30": self.strategy_relative_strength_index_N(30),
+
+            "SMA30_RSI14": self.strategy_SMA30_RSI14(),
+            "EMA90_RSI14": self.strategy_EMA90_RSI14(),
+            "SMA90_RSI14": self.strategy_SMA90_RSI14(),
+            "EMA30_RSI14": self.strategy_EMA30_RSI14(),
+            "SMA30_BBS7": self.strategy_SMA30_BBS7(),
+            "EMA90_BBS7": self.strategy_EMA90_BBS7(),
         }
 
     def strategy_buy_and_hold(self):
@@ -121,6 +129,42 @@ class TradingStrategy:
             elif ds_rsi[idx] > 70:
                 ds_signal[idx] = -1
         return ds_signal
+
+    def strategy_SMA30_RSI14(self):
+
+        SMA30 = self.strategy_simple_moving_average_N(30)
+        RSI14 = self.strategy_relative_strength_index_N(14)
+        return (SMA30 + RSI14).apply(np.sign)
+
+    def strategy_EMA90_RSI14(self):
+
+        EMA90 = self.strategy_exponential_moving_average_N(90)
+        RSI14 = self.strategy_relative_strength_index_N(14)
+        return (EMA90 + RSI14).apply(np.sign)
+
+    def strategy_SMA90_RSI14(self):
+
+        SMA90 = self.strategy_simple_moving_average_N(90)
+        RSI14 = self.strategy_relative_strength_index_N(14)
+        return (SMA90 + RSI14).apply(np.sign)
+
+    def strategy_EMA30_RSI14(self):
+
+        EMA30 = self.strategy_exponential_moving_average_N(30)
+        RSI14 = self.strategy_relative_strength_index_N(14)
+        return (EMA30 + RSI14).apply(np.sign)
+
+    def strategy_SMA30_BBS7(self):
+
+        SMA30 = self.strategy_simple_moving_average_N(30)
+        BBS7 = self.strategy_bollinger_bands_N(7)
+        return (SMA30 + BBS7).apply(np.sign)
+
+    def strategy_EMA90_BBS7(self):
+
+        EMA90 = self.strategy_exponential_moving_average_N(90)
+        BBS7 = self.strategy_bollinger_bands_N(7)
+        return (EMA90 + BBS7).apply(np.sign)
 
     def calc_payoff(self, ds_signal):
 

@@ -10,6 +10,12 @@ class PerformanceMetrics:
         """
         self.ds_daily_log_return = ds_daily_log_return
         self.df_trading_signals = df_trading_signals
+        self.df_trading_signals.rename(
+            columns = {
+                col: col.replace("signal_", "") for col in self.df_trading_signals.columns
+                },
+                inplace=True
+        )
 
         self.dict_performance_metrics = {
             "cumulative_return": self.cumulative_return,
@@ -25,21 +31,22 @@ class PerformanceMetrics:
 
     def compute_performance_metrics(self, performance_metrics):
         
+        # signal_cols = [column.replace("singal_", "") for column in self.df_trading_signals.columns]
         df_performance_metrics = []
         df_performance_metrics_last = pd.DataFrame(
             index=performance_metrics,
             columns=self.df_trading_signals.columns,
             )
         
-        for column in self.df_trading_signals.columns:
+        for trading_strategy in self.df_trading_signals.columns:
             # if column.startswith("singal"):
-            trading_strategy = column.replace("singal_", "")
-            self.ds_actual_return = self.ds_daily_log_return * self.df_trading_signals[column]
+            # trading_strategy = column.replace("singal_", "")
+            self.ds_actual_return = self.ds_daily_log_return * self.df_trading_signals[trading_strategy]
             for metric in performance_metrics:
                 ds_perf_metric = self.dict_performance_metrics[metric]()
                 ds_perf_metric.name = f"{metric}_{trading_strategy}"
                 df_performance_metrics.append(ds_perf_metric)
-                df_performance_metrics_last.at[metric, column] = ds_perf_metric[-1]
+                df_performance_metrics_last.at[metric, trading_strategy] = ds_perf_metric[-1]
         df_performance_metrics = pd.concat(df_performance_metrics, axis=1)
         return df_performance_metrics_last, df_performance_metrics
 
