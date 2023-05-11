@@ -56,7 +56,7 @@ class TradingStrategy:
 
     def compute_exponential_moving_average_N(self, N):
 
-        self.ds_exponential_moving_avg_N = self.ds_close.ewm(span=N, adjust=False).mean()
+        self.ds_exponential_moving_avg_N = self.ds_close.ewm(span=N, min_periods=N, adjust=False).mean()
         self.ds_exponential_moving_avg_N_1 = self.ds_exponential_moving_avg_N.shift(periods=1)
 
     def compute_STD_N(self, N):
