@@ -48,11 +48,11 @@ class BaseReg:
             X_test = self.scaler.transform(X_test)
         self.score = self.regressor.score(X_test, Y_test)
 
-    def calc_price_from_daily_log_returns(self, Y_pred, price_n_1, price_var='Close'):
+    def calc_price_from_daily_log_returns(self, Y_pred, price_var='Close'):
 
         assert price_var in self.X_train.columns
 
-        # price_n_1 = self.X_train[price_var].iloc[-1]
+        price_n_1 = self.X_train[price_var].iloc[-1]
         arr_price = np.array([np.nan]*len(self.X_test))
         for i in range(len(self.X_test)):
             arr_price[i] = price_n_1 * np.exp(Y_pred.iloc[i])
